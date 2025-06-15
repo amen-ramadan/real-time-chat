@@ -1,7 +1,18 @@
-POST http://localhost:3003/authenticate
+# POST http://localhost:3003/authenticate
+# content-type: application/json
+
+# {
+#   "username": "amen"
+# }
+
+POST http://localhost:3003/users/register
 content-type: application/json
 
 {
-  "username": "amen"
+  "firstName": "amen4",
+  "lastName": "ramadan4",
+  "email": "amen4@ramadan.com",
+  "password": "sha456...4",
+  "confirmPassword": "sha456...4"
 }
 
