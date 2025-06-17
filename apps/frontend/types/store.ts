@@ -1,0 +1,35 @@
+import { User } from "./user";
+
+export interface Friend {
+  _id: string;
+  [key: string]: any;
+}
+
+export interface StoreType {
+  socket: any;
+  setSocket: (socket: any) => void;
+
+  accessToken: string | null;
+  setAccessToken: (accessToken: string) => void;
+
+  user: User | null;
+  setUser: (user: User) => void;
+
+  friends: Friend[] | null;
+  setFriends: (friends: Friend[]) => void;
+  addFriend: (friend: Friend) => void;
+  updateFriend: (user: Friend) => void;
+
+  typing: string | null;
+  setTyping: (typing: string) => void;
+
+  input: string;
+  setInput: (input: string) => void;
+
+  messages: string[];
+  setMessages: (messages: string[]) => void;
+  addMessage: (message: string) => void;
+
+  currentReceiver: User | null;
+  setCurrentReceiver: (receiver: User) => void;
+}
