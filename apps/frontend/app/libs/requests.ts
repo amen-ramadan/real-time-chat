@@ -1,5 +1,5 @@
 import axios from "axios";
-import { User } from "../../types/user";
+import { Login, User } from "../../types/user";
 
 axios.defaults.baseURL = "http://localhost:3003";
 
@@ -22,6 +22,10 @@ axios.defaults.baseURL = "http://localhost:3003";
 
 export const register = async (user: User) => {
   const { data } = await axios.post("/users/register", user);
+  return data;
+};
+export const login = async (user: Login) => {
+  const { data } = await axios.post("/users/login", user);
   return data;
 };
 

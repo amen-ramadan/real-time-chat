@@ -51,4 +51,26 @@ export class UsersService {
       accessToken,
     };
   }
+
+  async login(email: string, password: string) {
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid password');
+    }
+
+    const payload = { sub: user._id };
+    const accessToken = this.jwtService.sign(payload);
+
+    const { password: _, ...userWithoutPassword } = user.toObject();
+    return {
+      message: 'User logged in successfully',
+      user: userWithoutPassword,
+      accessToken,
+    };
+  }
 }

@@ -5,3 +5,8 @@ export type User = {
   password: string;
   confirmPassword: string;
 };
+
+export type Login = {
+  email: string;
+  password: string;
+};

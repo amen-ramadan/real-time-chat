@@ -5,14 +5,21 @@
 #   "username": "amen"
 # }
 
-POST http://localhost:3003/users/register
+# POST http://localhost:3003/users/register
+# content-type: application/json
+
+# {
+#   "firstName": "amen4",
+#   "lastName": "ramadan4",
+#   "email": "amen4@ramadan.com",
+#   "password": "sha456...4",
+#   "confirmPassword": "sha456...4"
+# }
+
+POST http://localhost:3003/users/login
 content-type: application/json
 
 {
-  "firstName": "amen4",
-  "lastName": "ramadan4",
   "email": "amen4@ramadan.com",
-  "password": "sha456...4",
-  "confirmPassword": "sha456...4"
+  "password": "sha456...4"
 }
-
