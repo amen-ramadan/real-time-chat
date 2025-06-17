@@ -3,23 +3,28 @@ import { User } from "../../types/user";
 
 axios.defaults.baseURL = "http://localhost:3003";
 
-export const register = async ({
-  lastName,
-  firstName,
-  email,
-  password,
-  confirmPassword,
-} : User) => {
-  const response = await axios.post("/users/register", {
-    lastName,
-    firstName,
-    email,
-    password,
-    confirmPassword,
-  });
+// export const register = async ({
+//   lastName,
+//   firstName,
+//   email,
+//   password,
+//   confirmPassword,
+// } : User) => {
+//   const response = await axios.post("/users/register", {
+//     lastName,
+//     firstName,
+//     email,
+//     password,
+//     confirmPassword,
+//   });
+// return response.data;
+// };
 
-  return response.data;
+export const register = async (user: User) => {
+  const { data } = await axios.post("/users/register", user);
+  return data;
 };
+
 
 // export const login = async (email, password) => {
 //   const response = await axios.post("/api/user/login", {

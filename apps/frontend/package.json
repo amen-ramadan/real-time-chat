@@ -14,6 +14,7 @@
     "@repo/ui": "workspace:*",
     "@tailwindcss/postcss": "^4.1.10",
     "@tanstack/react-query": "^5.80.7",
+    "@tanstack/react-query-devtools": "^5.80.7",
     "axios": "^1.10.0",
     "classnames": "^2.5.1",
     "dotenv": "^16.5.0",
