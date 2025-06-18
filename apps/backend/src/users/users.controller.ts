@@ -1,6 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { JwtAuthGuard } from 'src/auth/auth.guard';
 
 @Controller('users')
 export class UsersController {
@@ -14,5 +16,13 @@ export class UsersController {
   @Post('login')
   async login(@Body() loginDto: { email: string; password: string }) {
     return this.usersService.login(loginDto.email, loginDto.password);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get('secret')
+  getSecret(@Req() req: Request & { user?: object }) {
+    return {
+      message: 'Authenticated',
+      user: req.user, // هذا ما أرجعه من jwt.strategy.ts
+    };
   }
 }

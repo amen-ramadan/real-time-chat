@@ -20,6 +20,7 @@ export default function Register() {
     onSuccess: (data) => {
       setUser(data.user);
       setAccessToken(data.accessToken);
+      document.cookie = `token=${data.accessToken}; path=/;`;
       router.push("/");
     },
     onError: (error: any) => {
