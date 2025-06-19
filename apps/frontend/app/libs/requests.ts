@@ -29,6 +29,26 @@ export const login = async (user: Login) => {
   return data;
 };
 
+export const updateUser = async (accessToken: string, body: Partial<User>) => {
+  const response = await axios.put("/api/user", body, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  return response.data;
+};
+
+export const updateProfilePicture = async (accessToken : string, formData : FormData) => {
+  const response = await axios.put("/api/user/profile-picture", formData, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  
+  return response.data;
+};
+
 
 // export const login = async (email, password) => {
 //   const response = await axios.post("/api/user/login", {

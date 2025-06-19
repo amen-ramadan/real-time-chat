@@ -10,7 +10,7 @@ export interface StoreType {
   setSocket: (socket: any) => void;
 
   accessToken: string | null;
-  setAccessToken: (accessToken: string) => void;
+  setAccessToken: (accessToken: string | null) => void;
 
   user: User | null;
   setUser: (user: User) => void;
@@ -31,5 +31,5 @@ export interface StoreType {
   addMessage: (message: string) => void;
 
   currentReceiver: User | null;
-  setCurrentReceiver: (receiver: User) => void;
+  setCurrentReceiver: (receiver: any) => void;
 }

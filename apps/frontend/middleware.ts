@@ -12,5 +12,5 @@ export function middleware(request: NextRequest) {
 
 // 👇 نحدد أي مسارات بده يشتغل عليها الحارس
 export const config = {
-  matcher: ['/'],
+  matcher: ['/', '/:receiverId*'],
 };

@@ -1,6 +1,3 @@
-"use client";
-
-export default function Home() {
-  console.log("cookies", document.cookie);
-  return <h1>hello world</h1>;
+export default function NoUserSelected() {
+  return <div>Please select a user from the list.</div>;
 }
