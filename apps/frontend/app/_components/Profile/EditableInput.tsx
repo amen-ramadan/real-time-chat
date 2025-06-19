@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { FaEdit, FaCheck } from "react-icons/fa";
 import cn from "classnames";

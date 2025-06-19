@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { FaCamera } from "react-icons/fa";
 import { IoMdReturnLeft } from "react-icons/io";
