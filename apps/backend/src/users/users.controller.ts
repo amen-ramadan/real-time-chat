@@ -25,4 +25,12 @@ export class UsersController {
       user: req.user, // هذا ما أرجعه من jwt.strategy.ts
     };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/')
+  async getUsers(@Req() req: Request) {
+    const user = req.user as { sub: string };
+    const userId = user.sub; // نأخذ الـ userId من التوكن
+    return this.usersService.getUsers(userId);
+  }
 }

@@ -17,3 +17,4 @@ export class Message extends Document {
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
+export type MessageDocument = Message & Document;

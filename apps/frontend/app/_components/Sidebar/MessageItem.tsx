@@ -2,6 +2,7 @@ import { getReceiverMessages } from "../../libs/filterMessages";
 import moment from "moment";
 import { Store } from "../../libs/globalState";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 const MessageItem = ({
   sender,
@@ -16,7 +17,8 @@ const MessageItem = ({
   const lastMessage = contactMessages[contactMessages.length - 1];
 
   const unreadMessages = contactMessages.filter(
-    (message) => !message.seen && message.receiverId !== id
+    (message: { seen: any; receiverId: any }) =>
+      !message.seen && message.receiverId !== id
   ).length;
 
   const onClick = () => {
@@ -24,12 +26,12 @@ const MessageItem = ({
     setActifMessage();
     // تعيين المستلم الحالي
     setCurrentReceiver();
-    // التنقل إلى صفحة المحادثة الجديدة
-    redirect(`/${id}`);
     // إرسال حدث "seen" إلى الخادم
     socket?.emit("seen", id);
     // تحديث حالة الرسائل محلياً لتعريفها بأنها "مرئية"
     setMessages(messages.map((message) => ({ ...message, seen: true })));
+    // التنقل إلى صفحة المحادثة الجديدة
+    redirect(`/${id}`);
   };
 
   return (
@@ -39,7 +41,7 @@ const MessageItem = ({
         selected ? "bg-[#2A3942]" : "hover:bg-[#202C33]"
       }`}
     >
-      <img
+      <Image
         src={profilePicture}
         alt="profilePicture"
         className="w-10 h-10 rounded-full mr-4"

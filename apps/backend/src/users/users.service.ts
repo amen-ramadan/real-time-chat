@@ -5,12 +5,14 @@ import * as bcrypt from 'bcryptjs';
 import { User, UserDocument } from './schemas/user.schema/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtService } from '@nestjs/jwt';
+import { SocketGateway } from 'src/socket/socket.gateway';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
+    private socketGateway: SocketGateway,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
@@ -45,6 +47,8 @@ export class UsersService {
     const { password: _password, ...userWithoutPassword } =
       createdUser.toObject();
 
+    this.socketGateway.emitUserCreated(createdUser);
+
     return {
       message: 'User registered successfully',
       user: userWithoutPassword,
@@ -72,5 +76,12 @@ export class UsersService {
       user: userWithoutPassword,
       accessToken,
     };
+  }
+
+  async getUsers(userId: string) {
+    return this.userModel
+      .find({ _id: { $ne: userId } })
+      .select('-password')
+      .exec();
   }
 }
