@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
@@ -83,5 +87,52 @@ export class UsersService {
       .find({ _id: { $ne: userId } })
       .select('-password')
       .exec();
+  }
+
+  async updateUser(
+    userId: string,
+    updateData: { firstName?: string; lastName?: string; status?: string },
+  ) {
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        firstName: updateData.firstName,
+        lastName: updateData.lastName,
+        status: updateData.status,
+      },
+      { new: true },
+    );
+
+    // إزالة كلمة المرور من البيانات المرجعة
+    if (updatedUser) {
+      const { password, ...userWithoutPassword } = updatedUser;
+      this.socketGateway.emitUserUpdated(userWithoutPassword); // إرسال الحدث إلى الجميع
+    }
+
+    return updatedUser;
+  }
+
+  async updateProfilePicture(userId: string, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const profilePicture = `http://${process.env.hostname}:${process.env.PORT}/uploads/${file.filename}`;
+
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { profilePicture },
+      { new: true },
+    );
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { password, ...userWithoutPassword } = user.toObject();
+
+    this.socketGateway.emitUserUpdated(userWithoutPassword);
+
+    return userWithoutPassword;
   }
 }

@@ -1,8 +1,20 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from 'src/auth/auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from 'src/common/multer.config';
 
 @Controller('users')
 export class UsersController {
@@ -32,5 +44,33 @@ export class UsersController {
     const user = req.user as { sub: string };
     const userId = user.sub; // نأخذ الـ userId من التوكن
     return this.usersService.getUsers(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('update')
+  async updateUser(
+    @Req() req: Request,
+    @Body()
+    body: {
+      firstName?: string;
+      lastName?: string;
+      status?: string;
+    },
+  ) {
+    const user = req.user as { sub: string };
+    const userId = user.sub;
+
+    return this.usersService.updateUser(userId, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('update-profile-picture')
+  @UseInterceptors(FileInterceptor('file', multerConfig))
+  async updateProfilePicture(
+    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const user = req.user as { sub: string };
+    return this.usersService.updateProfilePicture(user.sub, file);
   }
 }

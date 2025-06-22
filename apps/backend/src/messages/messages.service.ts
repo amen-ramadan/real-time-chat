@@ -36,4 +36,17 @@ export class MessagesService {
     });
     return message;
   }
+
+  async markMessagesAsSeen(
+    senderId: string,
+    receiverId: string,
+  ): Promise<void> {
+    await this.messageModel
+      .updateMany(
+        { senderId, receiverId, seen: false },
+        { seen: true },
+        { multi: true },
+      )
+      .exec();
+  }
 }

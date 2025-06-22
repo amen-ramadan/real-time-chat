@@ -20,8 +20,8 @@ export interface StoreType {
   addFriend: (friend: Friend) => void;
   updateFriend: (user: Friend) => void;
 
-  typing: string | null;
-  setTyping: (typing: string) => void;
+  typing: boolean;
+  setTyping: (typing: boolean) => void;
 
   input: string;
   setInput: (input: string) => void;

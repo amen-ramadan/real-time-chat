@@ -8,8 +8,19 @@ import { Store } from "./libs/globalState";
 export const socket: Socket = io("http://localhost:3003");
 
 export default function NoUserSelected() {
-  const { setFriends, addFriend, user, setMessages, addMessage, accessToken } =
-    Store();
+  const {
+    setFriends,
+    addFriend,
+    user,
+    setMessages,
+    addMessage,
+    accessToken,
+    setTyping,
+    setUser,
+    updateFriend,
+    setCurrentReceiver,
+    currentReceiver,
+  } = Store();
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -28,6 +39,29 @@ export default function NoUserSelected() {
 
     socket.on("receive_message", (message) => {
       addMessage(message);
+    });
+
+    socket.on("typing", () => {
+      setTyping(true);
+    });
+
+    socket.on("stop_typing", () => {
+      setTyping(false);
+    });
+
+    socket.on("seen", (senderId) => {
+      console.log("Seen", senderId);
+    });
+
+    socket.on("user_updated", (updatedUser) => {
+      if (user?._id === updatedUser._id) {
+        setUser(updatedUser);
+      } else {
+        updateFriend(updatedUser);
+        if (currentReceiver?._id === updatedUser._id) {
+          setCurrentReceiver(updatedUser);
+        }
+      }
     });
 
     const fetchData = async () => {
