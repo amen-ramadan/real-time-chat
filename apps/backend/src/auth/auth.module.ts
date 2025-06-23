@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { AuthService } from './auth.service';
@@ -8,7 +8,7 @@ import { AuthService } from './auth.service';
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: 'YrJgjcEGnCyMufWPHSFcMkdP',
+      secret: process.env.JWT_SECRET || 'YrJgjcEGnCyMufWPHSFcMkdP',
       signOptions: { expiresIn: '7d' }, // مدة صلاحية التوكن
     }),
   ],

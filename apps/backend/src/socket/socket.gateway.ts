@@ -1,5 +1,3 @@
-// socket.gateway.ts
-
 import {
   WebSocketGateway,
   OnGatewayConnection,
@@ -25,6 +23,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private logger: Logger = new Logger('SocketGateway');
+
   constructor(
     private readonly messagesService: MessagesService,
     private readonly jwtService: JwtService,
@@ -45,7 +44,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!userId) throw new UnauthorizedException('Invalid payload');
 
     // نربط الـ userId مع الاتصال
-    (client.data as { userId: string }).userId = userId;
+    client.data.userId = userId; // ← تبسيط الكود
     client.join(userId);
 
     this.logger.log(`🔌 User connected: ${userId}`);
@@ -70,7 +69,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     },
     @ConnectedSocket() client: Socket,
   ) {
-    const senderId = (client as any).userId; // ← إذا حاطط userId بالدالة middleware
+    const senderId = client.data.userId; // ← التصحيح هنا
 
     // 👇 احفظ الرسالة بالخدمة
     const message = await this.messagesService.createMessage({

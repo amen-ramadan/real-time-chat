@@ -12,7 +12,7 @@ import {
     MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]),
   ],
   controllers: [MessagesController],
-  exports: [MessagesService],
+  exports: [MessagesService], // ← فقط MessagesService
   providers: [MessagesService],
 })
 export class MessagesModule {}

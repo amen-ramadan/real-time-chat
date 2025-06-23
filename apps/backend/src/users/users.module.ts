@@ -5,13 +5,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { UserSchema } from './schemas/user.schema/user.schema';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SocketGateway } from 'src/socket/socket.gateway';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.registerAsync({
-      imports: [ConfigModule],
+      imports: [ConfigModule, SocketGateway],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
