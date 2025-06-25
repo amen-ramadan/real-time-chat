@@ -38,6 +38,8 @@ export const initSocket = () => {
 
   socket.on('connect_error', (error) => {
     console.error('Socket connection error:', error.message, error.data);
+    Store.getState().setSocket(null); // Clear socket instance from global state
+    socket = null; // Reset local socket variable to allow re-initialization by initSocket
     // Potentially display an error to the user or attempt reconnection with backoff
   });
 

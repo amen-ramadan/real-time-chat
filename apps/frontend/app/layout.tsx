@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ReactQueryProvider from "../provider/ReactQueryProvider";
-import Sidebar from "./_components/Sidebar";
+import AppLayout from "./_components/AppLayout"; // Import the new AppLayout
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -17,10 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ReactQueryProvider>
-          <div className="flex h-screen">
-            <Sidebar />
-            {children}
-          </div>
+          <AppLayout>{children}</AppLayout>
         </ReactQueryProvider>
       </body>
     </html>

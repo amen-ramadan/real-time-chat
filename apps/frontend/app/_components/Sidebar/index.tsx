@@ -51,14 +51,20 @@ export default function Sidebar() {
     <div className="flex-[1] bg-[#131B20] border-r border-[#a7a8a82f] h-full overflow-y-scroll">
       <div className="flex items-center justify-between bg-[#222C32] p-3 h-16">
         <div className="flex items-center justify-center">
-          <Image
-            className="w-10 h-10 rounded-full cursor-pointer"
-            src={user?.profilePicture ?? ""}
-            alt="Avatar"
-            onClick={() => setShowProfile(true)}
-          />
+          {user?.profilePicture ? (
+            <Image
+              className="w-10 h-10 rounded-full cursor-pointer"
+              src={user.profilePicture}
+              alt="Avatar"
+              width={40}
+              height={40}
+              onClick={() => setShowProfile(true)}
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gray-500 cursor-pointer" onClick={() => setShowProfile(true)} /> // Placeholder
+          )}
           <div className="ml-4">
-            <p className="text-white text-md">{`${user?.firstName} ${user?.lastName}`}</p>
+            <p className="text-white text-md">{`${user?.firstName || ''} ${user?.lastName || ''}`}</p>
           </div>
         </div>
       </div>
