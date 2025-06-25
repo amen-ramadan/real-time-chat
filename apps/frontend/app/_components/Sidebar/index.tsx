@@ -45,6 +45,8 @@ export default function Sidebar() {
     return <Profile onClose={() => setShowProfile(false)} />;
   }
 
+  console.log("user from sidebar", user);
+
   return (
     <div className="flex-[1] bg-[#131B20] border-r border-[#a7a8a82f] h-full overflow-y-scroll">
       <div className="flex items-center justify-between bg-[#222C32] p-3 h-16">

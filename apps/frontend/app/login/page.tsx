@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { login } from "../libs/requests";
 import { useMutation } from "@tanstack/react-query";
-import ErrorMessage from "../_components/Chat/ErrorMessage";
+import ErrorMessage from "../_components/ErrorMessage";
 
 export default function Register() {
   const { setUser, setAccessToken } = Store();
@@ -24,7 +24,7 @@ export default function Register() {
       router.push("/");
     },
     onError: (error: any) => {
-      alert(error?.message || "Registration failed");
+      console.log(error?.message || "Registration failed");
     },
   });
 

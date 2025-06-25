@@ -2,6 +2,8 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -16,7 +18,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
-    private socketGateway: SocketGateway,
+    @Inject(forwardRef(() => SocketGateway)) private socketGateway: SocketGateway,
   ) {}
 
   async register(createUserDto: CreateUserDto) {

@@ -16,6 +16,7 @@ import { JwtService } from '@nestjs/jwt';
 @WebSocketGateway({
   cors: {
     origin: '*', // يمكنك تحديد رابط ال frontend فقط إن أردت
+    credentials: true,
   },
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -30,7 +31,20 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
 
   handleConnection(client: Socket) {
-    const token = (client.handshake.auth as { token?: string }).token;
+    const authToken = client.handshake.auth?.token;
+    const handshakeAuthHeader = client.handshake.headers?.authorization;
+    const requestAuthHeader = client.request.headers?.authorization;
+
+    let token: string | undefined;
+
+    if (typeof authToken === 'string') {
+      token = authToken;
+    } else if (typeof handshakeAuthHeader === 'string') {
+      token = handshakeAuthHeader.replace('Bearer ', '');
+    } else if (typeof requestAuthHeader === 'string') {
+      token = requestAuthHeader.replace('Bearer ', '');
+    }
+
     if (!token) throw new UnauthorizedException('Token not provided');
 
     let payload: { sub: string };
@@ -39,6 +53,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } catch (error) {
       throw new UnauthorizedException('Invalid token');
     }
+
+    console.log(`🔑 Token payload:`, payload);
 
     const userId = payload.sub;
     if (!userId) throw new UnauthorizedException('Invalid payload');

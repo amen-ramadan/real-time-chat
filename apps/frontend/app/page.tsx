@@ -23,12 +23,29 @@ export default function NoUserSelected() {
   } = Store();
 
   useEffect(() => {
+    if (!accessToken) {
+      console.log("No access token available, skipping socket connection");
+      return;
+    }
+
+    console.log("Creating socket connection with token...");
+
+    const socket = io("http://localhost:3003", {
+      auth: {
+        token: accessToken,
+      },
+    });
+
     socket.on("connect", () => {
       console.log("✅ Connected to socket server");
     });
 
     socket.on("disconnect", () => {
       console.log("❌ Disconnected from socket server");
+    });
+
+    socket.on("error", (error) => {
+      console.error("Socket error:", error);
     });
 
     socket.on("user_created", (userCreated) => {

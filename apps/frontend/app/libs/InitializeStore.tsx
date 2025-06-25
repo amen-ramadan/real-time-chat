@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { Store } from "../libs/globalState";
 
 export default function InitializeStore() {
-  const setUser = Store((s) => s.setUser);
-  const setAccessToken = Store((s) => s.setAccessToken);
-  const setCurrentReceiver = Store((s) => s.setCurrentReceiver);
+  const { setUser } = Store();
+  const { setAccessToken } = Store();
+  const { setCurrentReceiver } = Store();
 
   useEffect(() => {
     const user = localStorage.getItem("user");
