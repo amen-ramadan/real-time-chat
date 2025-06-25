@@ -1,7 +1,8 @@
 import axios from "axios";
 import { Login, User } from "../../types/user";
 
-axios.defaults.baseURL = "http://localhost:3003";
+// Use NEXT_PUBLIC_API_URL environment variable, with a fallback for local development
+axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
 
 export const register = async (user: User) => {
   const { data } = await axios.post("/users/register", user);
@@ -13,7 +14,7 @@ export const login = async (user: Login) => {
 };
 
 export const updateUser = async (accessToken: string, body: Partial<User>) => {
-  const response = await axios.put("/api/user", body, {
+  const response = await axios.put("/users/update", body, { // Corrected URL
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -23,12 +24,12 @@ export const updateUser = async (accessToken: string, body: Partial<User>) => {
 };
 
 export const updateProfilePicture = async (accessToken : string, formData : FormData) => {
-  const response = await axios.put("/api/user/profile-picture", formData, {
+  const response = await axios.put("/users/update-profile-picture", formData, { // Corrected URL
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   });
-  
+
   return response.data;
 };
 
@@ -45,7 +46,7 @@ export const getUsers = async (accessToken: string) => {
 
 
 export const getMessages = async (accessToken: string) => {
-  const response = await axios.get("messages", {
+  const response = await axios.get("/messages", { // Corrected method and URL
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

@@ -39,9 +39,7 @@ export default function Register() {
       email: Yup.string().email("Invalid email").required("Email is required"),
       password: Yup.string()
         .required("Password is required")
-        .min(8, "Password must be at least 8 characters")
-        .required("Confirm Password is required")
-        .oneOf([Yup.ref("password")], "Passwords must match"),
+        .min(8, "Password must be at least 8 characters"),
     }),
     onSubmit: (values) => {
       LoginUser(values);
