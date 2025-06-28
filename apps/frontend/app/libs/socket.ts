@@ -114,9 +114,10 @@ export const disconnectSocket = () => {
 export const sendMessage = (receiverId: string, content: string) => {
   const s = getSocket();
   if (s) {
+    console.log(`[Socket.IO] Emitting 'send_message' to ${receiverId}. Content: "${content}". Socket ID: ${s.id}`);
     s.emit('send_message', { receiverId, content });
   } else {
-    console.error('Cannot send message, socket not connected.');
+    console.error('[Socket.IO] sendMessage: Cannot send message, socket not connected.');
   }
 };
 

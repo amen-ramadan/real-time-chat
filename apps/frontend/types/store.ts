@@ -26,10 +26,18 @@ export interface StoreType {
   input: string;
   setInput: (input: string) => void;
 
-  messages: string[];
-  setMessages: (messages: string[]) => void;
-  addMessage: (message: string) => void;
+  // Store messages as an object keyed by receiverId (or a unique chat ID)
+  // Each value will be an array of Message objects for that chat.
+  messagesByChat: { [chatId: string]: Message[] };
+  setChatMessages: (chatId: string, messages: Message[]) => void;
+  addMessageToChat: (chatId: string, message: Message) => void;
+  // Optional: a way to clear messages for a chat or all chats
+  // clearChatMessages: (chatId: string) => void;
+  // clearAllChatMessages: () => void;
 
   currentReceiver: User | null;
-  setCurrentReceiver: (receiver: any) => void;
+  setCurrentReceiver: (receiver: User | null) => void; // Type 'any' changed to 'User | null'
 }
+
+// Import Message type
+import { Message } from "./message";

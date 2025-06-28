@@ -45,8 +45,9 @@ export const getUsers = async (accessToken: string) => {
 };
 
 
-export const getMessages = async (accessToken: string) => {
-  const response = await axios.get("/messages", { // Corrected method and URL
+// Renamed parameter for clarity, matching controller's expectation
+export const getMessagesForChat = async (accessToken: string, partnerId: string) => {
+  const response = await axios.get(`/messages/${partnerId}`, { // Pass partnerId in the URL
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

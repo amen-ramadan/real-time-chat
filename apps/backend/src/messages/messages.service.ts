@@ -12,11 +12,16 @@ export class MessagesService {
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
   ) {}
 
-  async getMessages(userId: string) {
+  async getMessages(userId: string, partnerId: string) {
+    // Find messages exchanged between the authenticated user (userId) and the partner (partnerId)
     return this.messageModel
       .find({
-        $or: [{ senderId: userId }, { receiverId: userId }],
+        $or: [
+          { senderId: userId, receiverId: partnerId },
+          { senderId: partnerId, receiverId: userId },
+        ],
       })
+      .sort({ createdAt: 1 }) // Sort by creation time
       .exec();
   }
 

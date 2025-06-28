@@ -4,9 +4,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Store } from "../libs/globalState";
 import { User } from "../../types/user";
-import { Message } from "../../types/store"; // Assuming Message type is defined in store.ts or a similar place
-import { initSocket, getSocket, sendMessage, sendTyping, sendStopTyping, sendSeen, disconnectSocket } from "../libs/socket";
-import { getUsers as fetchUsers, getMessages as fetchMessages } from "../libs/requests"; // API requests
+import { Message } from "../../types/message"; // Corrected import
+import { initSocket, getSocket, sendMessage, sendTyping, sendStopTyping, sendSeen } from "../libs/socket";
+// Import renamed function
+import { getUsers as fetchUsers, getMessagesForChat as fetchChatMessages } from "../libs/requests";
 
 export default function ChatPage() {
   const params = useParams();
@@ -17,113 +18,133 @@ export default function ChatPage() {
     user: currentUser,
     accessToken,
     socket,
-    messages,
-    addMessage,
-    setMessages,
+    messagesByChat,
+    setChatMessages,
+    addMessageToChat,
     friends,
     setFriends,
-    typing,
-    setTyping,
+    typing, // Assuming typing is global or needs per-chat logic later
+    // setTyping, // setTyping might need adjustment if it's per-chat
     currentReceiver,
     setCurrentReceiver,
   } = Store();
 
+  // Get messages for the current chat from the store
+  const currentChatMessages = (receiverId && messagesByChat[receiverId]) ? messagesByChat[receiverId] : [];
+
   const [receiverUser, setReceiverUser] = useState<User | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const messagesEndRef = useRef<null | HTMLDivElement>(null); // For scrolling to bottom
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const typingTimeoutRef = useRef<null | NodeJS.Timeout>(null);
 
   // Initialize socket connection
   useEffect(() => {
     if (accessToken && !socket) {
+      console.log("[ChatPage] Initializing socket...");
       initSocket();
     }
-
-    // Cleanup on component unmount
-    return () => {
-      // Consider if socket should be disconnected here or managed globally
-      // If many components use it, disconnecting here might be premature.
-      // For a dedicated chat page, it might make sense.
-      // disconnectSocket();
-    };
+    // Consider disconnectSocket in cleanup if appropriate for app lifecycle
   }, [accessToken, socket]);
 
-  // Fetch users (friends) and set current receiver
+  // Fetch users (friends) and set current receiver based on receiverId from params
   useEffect(() => {
     if (accessToken && (!friends || friends.length === 0)) {
+      console.log("[ChatPage] Fetching users (friends)...");
       fetchUsers(accessToken)
         .then(setFriends)
-        .catch(console.error);
+        .catch(err => console.error("[ChatPage] Error fetching users:", err));
     }
     if (friends && receiverId) {
       const foundReceiver = friends.find((f) => f._id === receiverId);
       if (foundReceiver) {
-        setReceiverUser(foundReceiver);
-        setCurrentReceiver(foundReceiver);
-      } else if (receiverId === currentUser?._id) {
-        // Handle case where user tries to chat with themselves if not allowed
+        console.log("[ChatPage] Setting current receiver:", foundReceiver.firstName);
+        setReceiverUser(foundReceiver); // Local state for header display
+        setCurrentReceiver(foundReceiver); // Global state
+      } else if (receiverId !== currentUser?._id) {
+        console.warn(`[ChatPage] Receiver with ID ${receiverId} not found in friends list.`);
+        // Optionally redirect or show a "user not found" message
         // router.push('/');
-        console.warn("Attempting to chat with self or receiver not found in friends list.");
       }
     }
   }, [accessToken, friends, receiverId, setFriends, setCurrentReceiver, currentUser?._id]);
 
-  // Fetch initial messages
+  // Fetch initial messages for the current chat
   useEffect(() => {
     if (accessToken && receiverId && currentUser?._id) {
-      // Only fetch if we have a valid receiver and current user
-      fetchMessages(accessToken) // This API needs to be adjusted to fetch messages for a specific chat
-        .then((allMessages) => {
-          // Filter messages for the current chat
-          const chatMessages = allMessages.filter(
-            (msg: Message) =>
-              (msg.senderId === currentUser._id && msg.receiverId === receiverId) ||
-              (msg.senderId === receiverId && msg.receiverId === currentUser._id)
-          );
-          setMessages(chatMessages);
-        })
-        .catch(console.error);
+      // Only fetch if messages for this chat aren't already loaded or are empty
+      if (!messagesByChat[receiverId] || messagesByChat[receiverId].length === 0) {
+        console.log(`[ChatPage] Fetching messages for chat with ${receiverId}`);
+        // Use the updated fetchChatMessages function that takes receiverId
+        fetchChatMessages(accessToken, receiverId)
+          .then((chatMessages: Message[]) => {
+            // Backend now returns messages filtered for this specific chat
+            console.log(`[ChatPage] Fetched ${chatMessages.length} messages for chat with ${receiverId}.`);
+            setChatMessages(receiverId, chatMessages);
+          })
+          .catch(error => console.error(`[ChatPage] Error fetching messages for ${receiverId}:`, error));
+      } else {
+        console.log(`[ChatPage] Messages for chat with ${receiverId} already in store. Count: ${messagesByChat[receiverId].length}`);
+      }
     }
-  }, [accessToken, receiverId, currentUser?._id, setMessages]);
+  }, [accessToken, receiverId, currentUser?._id, setChatMessages, messagesByChat]);
 
-  // Scroll to bottom of messages
+  // Scroll to bottom of messages when new messages are added to the current chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [currentChatMessages]);
 
-  // Handle incoming messages via socket
+  // Handle incoming messages via socket (global listener for all messages)
   useEffect(() => {
     const currentSocket = getSocket();
-    if (currentSocket) {
+    if (currentSocket && currentUser?._id) {
       const messageListener = (newMessage: Message) => {
-        // Ensure message is for the current chat
-        if (
-          (newMessage.senderId === currentUser?._id && newMessage.receiverId === receiverId) ||
-          (newMessage.senderId === receiverId && newMessage.receiverId === currentUser?._id)
-        ) {
-          addMessage(newMessage);
-          if (newMessage.senderId === receiverId && document.hidden) {
-             // Optional: browser notification for new message when tab is not active
+        console.log('[ChatPage] Global receive_message listener invoked with:', newMessage);
+
+        let targetChatId: string | null = null;
+        if (newMessage.senderId === currentUser._id) { // Message sent BY current user TO someone
+          targetChatId = newMessage.receiverId;
+        } else if (newMessage.receiverId === currentUser._id) { // Message received BY current user FROM someone
+          targetChatId = newMessage.senderId;
+        }
+
+        if (targetChatId) {
+          console.log(`[ChatPage] Adding message to chat ${targetChatId}:`, newMessage);
+          addMessageToChat(targetChatId, newMessage);
+
+          // If this message is for the currently open chat, and was sent by the other person
+          if (targetChatId === receiverId && newMessage.senderId === receiverId) {
+            if (document.hidden) {
+              // Optional: browser notification for new message when tab is not active
+              console.log(`[ChatPage] Document hidden, new message from ${receiverId} for current chat.`);
+            }
+            // Mark as seen (current user has seen this message from receiverId)
+            console.log(`[ChatPage] Sending 'seen' for message from ${receiverId}`);
+            sendSeen(receiverId);
           }
-          if (newMessage.senderId === receiverId) {
-            sendSeen(receiverId); // Current user has seen this message from receiver
-          }
+        } else {
+          console.warn('[ChatPage] Received message not involving current user, or IDs are undefined:', newMessage);
         }
       };
+
+      console.log(`[ChatPage] Setting up global 'receive_message' listener on socket: ${currentSocket.id}`);
       currentSocket.on('receive_message', messageListener);
       return () => {
+        console.log(`[ChatPage] Cleaning up global 'receive_message' listener on socket: ${currentSocket.id}`);
         currentSocket.off('receive_message', messageListener);
       };
     }
-  }, [currentUser?._id, receiverId, addMessage, socket]);
+  }, [socket, currentUser?._id, addMessageToChat, sendSeen, receiverId]); // receiverId is needed for the sendSeen logic for current chat
 
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && receiverId) {
+    console.log('[ChatPage] handleSendMessage called. Message:', newMessage);
+    if (newMessage.trim() && receiverId && currentUser?._id) {
+      // Optimistically add to local state first? Or wait for server ack?
+      // Current setup waits for server to broadcast it back via 'receive_message'.
       sendMessage(receiverId, newMessage.trim());
       setNewMessage("");
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      sendStopTyping(receiverId);
+      sendStopTyping(receiverId); // Inform receiver that typing stopped
     }
   };
 
@@ -133,57 +154,76 @@ export default function ChatPage() {
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       sendStopTyping(receiverId);
-    }, 2000); // Stop typing if no input for 2 seconds
+    }, 2000);
   };
 
   if (!currentUser) {
-    // router.push('/login'); // Should be handled by middleware ideally
-    return <p>Loading user...</p>;
+    return <p className="p-4">Loading user information...</p>;
   }
 
-  if (!receiverUser && friends) {
-    // If friends are loaded but receiver not found (and not self-chat)
-    return <p>Receiver not found. Select a user to chat with.</p>;
+  // If receiverId is present but receiverUser (from friends list) is not yet found
+  if (receiverId && !receiverUser && friends && friends.length > 0 && currentUser._id !== receiverId) {
+     return <p className="p-4">User not found in your contacts or still loading.</p>;
   }
-   if (!receiverUser && !friends) {
-    return <p>Loading chat...</p>;
+  // If friends are loaded, but receiverId is not in friends (and not self)
+  if (receiverId && friends && !friends.find(f => f._id === receiverId) && currentUser._id !== receiverId) {
+    return <p className="p-4">Selected user not in contacts.</p>;
   }
+  // Initial loading state for receiver or if trying to chat with self (if not desired)
+   if (!receiverUser && receiverId !== currentUser?._id) { // If receiverId is present but receiverUser is not resolved yet
+    return <p className="p-4">Loading chat with user...</p>;
+  }
+   if (receiverId === currentUser?._id) { // Optional: UI for chatting with self / saved messages
+     return <p className="p-4">Chatting with yourself (Saved Messages).</p>;
+   }
+   if (!receiverId || !receiverUser) { // If no receiver selected, or receiverUser is null (e.g. initial state before friends load)
+     return <p className="p-4">Select a user to start chatting.</p>; // Should be handled by redirecting to a page like '/'
+   }
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-full bg-bg-primary text-white w-full">
       {/* Header */}
-      <header className="bg-blue-600 text-white p-4 shadow-md">
-        <h1 className="text-xl font-semibold">
-          Chat with {receiverUser?.firstName || "User"}
-        </h1>
-        {typing === receiverId && <p className="text-sm text-blue-200 italic">typing...</p>}
+      <header className="bg-bg-secondary p-4 shadow-md flex items-center space-x-3">
+        {receiverUser?.profilePicture ? (
+            <Image src={receiverUser.profilePicture} alt="Receiver Avatar" width={40} height={40} className="rounded-full" />
+        ) : (
+            <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-xl font-semibold">
+                {receiverUser?.firstName?.charAt(0).toUpperCase()}
+            </div>
+        )}
+        <div>
+            <h1 className="text-xl font-semibold">
+            {receiverUser?.firstName || "Chat"} {receiverUser?.lastName || ""}
+            </h1>
+            {typing === receiverId && <p className="text-sm text-green-400 italic">typing...</p>}
+        </div>
       </header>
 
       {/* Messages Area */}
-      <div className="flex-grow p-4 overflow-y-auto space-y-2 bg-gray-200">
-        {messages.map((msg) => (
+      <div className="flex-grow p-4 overflow-y-auto space-y-2 bg-bg-primary">
+        {currentChatMessages.map((msg) => (
           <div
-            key={msg._id}
-            className={`flex ${
+            key={msg._id} // Key comes from the message object
+            className={`flex mb-2 ${
               msg.senderId === currentUser._id ? "justify-end" : "justify-start"
             }`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow ${
+              className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg shadow ${
                 msg.senderId === currentUser._id
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-800"
+                  ? "bg-send-message-bg text-white rounded-br-none"
+                  : "bg-bg-secondary text-white rounded-bl-none"
               }`}
             >
-              <p>{msg.content}</p>
-              <span className="text-xs opacity-75">
-                {new Date(msg.createdAt).toLocaleTimeString()}
+              <p className="text-sm">{msg.content}</p>
+              <span className="text-xs text-gray-400 mt-1 block text-right">
+                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
               </span>
-              {/* Basic seen status - improve later */}
-              {msg.senderId === currentUser._id && msg.seen && (
-                <span className="text-xs opacity-75 ml-2">Seen</span>
-              )}
+              {/* Basic seen status - TODO: improve later with checkmarks */}
+              {/* {msg.senderId === currentUser._id && msg.seen && (
+                <span className="text-xs text-gray-400 ml-2">Seen</span>
+              )} */}
             </div>
           </div>
         ))}
@@ -191,8 +231,8 @@ export default function ChatPage() {
       </div>
 
       {/* Input Area */}
-      <div className="bg-white p-4 shadow-up">
-        <div className="flex items-center">
+      <div className="bg-bg-secondary p-2 sm:p-4 border-t border-border-primary">
+        <div className="flex items-center space-x-2">
           <input
             type="text"
             value={newMessage}
@@ -200,13 +240,15 @@ export default function ChatPage() {
               setNewMessage(e.target.value);
               handleTyping();
             }}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={(e) => {if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage();}}}
             placeholder="Type a message..."
-            className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-grow p-3 bg-bg-input rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 text-white placeholder-gray-400"
+            rows={1}
           />
           <button
             onClick={handleSendMessage}
-            className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none"
+            disabled={!newMessage.trim()}
+            className="bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Send
           </button>

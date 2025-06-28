@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { StoreType } from "../../types/store"; // Ensure Message type is part of StoreType if messages are here
+import { StoreType } from "../../types/store";
+import { Message } from "../../types/message"; // Ensure Message type is imported
 
 export const Store = create<StoreType>()(
   persist(
@@ -8,24 +9,23 @@ export const Store = create<StoreType>()(
       // Persisted state
       accessToken: null,
       user: null,
-      currentReceiver: null, // Persisting currentReceiver as well
+      currentReceiver: null,
 
-      // Non-persisted state (or state that is re-fetched/session-specific)
+      // Non-persisted state
       socket: null,
       friends: null,
-      typing: null,
-      input: "",
-      messages: [], // Messages are typically fetched for a specific chat session
+      typing: null, // Consider if this should be an object { [chatId: string]: boolean | string }
+      input: "", // This seems like local component state, but if global, okay.
+      messagesByChat: {}, // Stores messages keyed by a chat ID (e.g., receiverId or a combined ID)
 
       // Actions
       setSocket: (socket) => set({ socket }),
-      setAccessToken: (accessToken) => set({ accessToken }), // localStorage is handled by persist middleware
-      setUser: (user) => set({ user }), // localStorage is handled by persist middleware
+      setAccessToken: (accessToken) => set({ accessToken }),
+      setUser: (user) => set({ user }),
 
       setFriends: (friends) => set({ friends }),
       addFriend: (friend) => {
         const currentFriends = get().friends || [];
-        // Avoid adding if friend already exists
         if (!currentFriends.find(f => f._id === friend._id)) {
           set({ friends: [...currentFriends, friend] });
         }
@@ -37,38 +37,57 @@ export const Store = create<StoreType>()(
             f._id === updatedUser._id ? { ...f, ...updatedUser } : f
           ),
         });
-        // Also update currentReceiver if it's the user being updated
         if (get().currentReceiver?._id === updatedUser._id) {
-          set({ currentReceiver: { ...get().currentReceiver, ...updatedUser } });
+          set({ currentReceiver: { ...get().currentReceiver, ...updatedUser } as StoreType['currentReceiver'] });
         }
-        // Also update the main user if it's the one being updated
         if (get().user?._id === updatedUser._id) {
-            set({ user: { ...get().user, ...updatedUser } });
+            set({ user: { ...get().user, ...updatedUser } as StoreType['user'] });
         }
       },
 
-      setTyping: (typing) => set({ typing }),
+      setTyping: (typing) // Consider new structure if typing is per chat
+        => set({ typing }),
       setInput: (input) => set({ input }),
 
-      setMessages: (messages) => set({ messages }),
-      addMessage: (message) => {
-        const currentMessages = get().messages;
-        set({ messages: [...currentMessages, message] });
+      // New message actions
+      setChatMessages: (chatId: string, messages: Message[]) => {
+        set((state) => ({
+          messagesByChat: {
+            ...state.messagesByChat,
+            [chatId]: messages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()), // Sort messages by time
+          }
+        }));
+      },
+      addMessageToChat: (chatId: string, newMessage: Message) => {
+        set((state) => {
+          const chatMessages = state.messagesByChat[chatId] || [];
+          // De-duplication based on _id
+          if (!chatMessages.find(msg => msg._id === newMessage._id)) {
+            const updatedChatMessages = [...chatMessages, newMessage];
+            updatedChatMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); // Sort messages
+            return {
+              messagesByChat: {
+                ...state.messagesByChat,
+                [chatId]: updatedChatMessages,
+              }
+            };
+          }
+          // If duplicate, log and return current state (or handle update if needed)
+          console.warn(`[Store.addMessageToChat] Attempted to add duplicate message ID: ${newMessage._id} to chat ${chatId}`);
+          return state;
+        });
       },
 
-      setCurrentReceiver: (receiver) => set({ currentReceiver: receiver }), // localStorage handled by persist
+      setCurrentReceiver: (receiver) => set({ currentReceiver: receiver }),
     }),
     {
-      name: 'chat-app-storage', // Name for localStorage key
-      storage: createJSONStorage(() => localStorage), // Specify localStorage
+      name: 'chat-app-storage',
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accessToken: state.accessToken,
         user: state.user,
-        currentReceiver: state.currentReceiver, // Persisting currentReceiver
+        currentReceiver: state.currentReceiver,
       }),
-      // Optional: Add a version number for migrations if state shape changes
-      // version: 1,
-      // migrate: (persistedState, version) => { ... }
     }
   )
 );
