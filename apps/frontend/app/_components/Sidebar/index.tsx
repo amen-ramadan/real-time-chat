@@ -61,7 +61,12 @@ export default function Sidebar() {
               onClick={() => setShowProfile(true)}
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gray-500 cursor-pointer" onClick={() => setShowProfile(true)} /> // Placeholder
+            <div
+              className="w-10 h-10 rounded-full bg-gray-700 cursor-pointer flex items-center justify-center text-white text-xl font-semibold"
+              onClick={() => setShowProfile(true)}
+            >
+              {user?.firstName ? user.firstName.charAt(0).toUpperCase() : '?'}
+            </div>
           )}
           <div className="ml-4">
             <p className="text-white text-md">{`${user?.firstName || ''} ${user?.lastName || ''}`}</p>
