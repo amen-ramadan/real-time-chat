@@ -4,9 +4,9 @@ import { MessagesService } from './messages.service';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/auth.guard';
 
-import { Controller, Get, Req, UseGuards, Param, ParseUUIDPipe } from '@nestjs/common'; // Added Param, ParseUUIDPipe (or ParseMongoIdPipe if using custom)
-// For MongoId, a custom pipe or string validation might be better than ParseUUIDPipe
-// Let's assume partnerId is a string for now and validated as needed.
+import { Controller, Get, Req, UseGuards, Param } from '@nestjs/common'; // Removed ParseUUIDPipe
+// For MongoId, a custom pipe or string validation might be better.
+// Let's assume partnerId is a string for now and validated as needed by Mongoose string coersion.
 
 @Controller('messages')
 export class MessagesController {
