@@ -9,14 +9,15 @@ export const initSocket = () => {
   const accessToken = Store.getState().accessToken;
 
   if (socket || !accessToken) {
-    if (!accessToken) console.error('Socket connection: No access token found.');
+    if (!accessToken) console.error('[Socket.IO] initSocket: No access token found. Cannot connect.');
+    // else console.log('[Socket.IO] initSocket: Socket already exists or is being initialized.');
     return socket;
   }
 
-  console.log('Attempting to connect to WebSocket server...');
+  console.log(`[Socket.IO] initSocket: Attempting to connect to WebSocket server at ${URL} with token:`, accessToken); // Log token
   socket = io(URL, {
     auth: {
-      token: accessToken,
+      token: accessToken, // This is where the token is sent
     },
     // You might need to configure transports if you have specific requirements
     // transports: ['websocket', 'polling'],
